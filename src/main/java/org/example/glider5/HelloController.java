@@ -1,12 +1,13 @@
-package org.example.glider5;
+/*package org.example.glider5;
 
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-import javafx.scene.control.Button;
-import java.sql.*;
 
+import java.sql.*;
 
 
 public class HelloController {
@@ -20,41 +21,121 @@ public class HelloController {
     private Button forgotPasswordButton;
     @FXML
     private Button signUpButton;
-
-/*
+    @FXML
+    private Label loginStatusLabel;
+// Label to display the login status
 
     private Connection connection;
 
     public void initialize() {
         connectToDatabase();
-        loginButton.setOnAction(e -> executeLogin());  //Binds the executeButton to the executeQuery method
+        loginButton.setOnAction(e -> {
+            try {
+                loginButtonClick(e);
+            } catch (SQLException ex) {
+                loginStatusLabel.setText("Error occurred while logging user to the system. Please try again." + ex.getMessage());
+                ex.printStackTrace();
+            }
+        });
     }
-
-    //private void connectToDatabase() {
-       // String url = "jdbc:mysql://gliderserver.mysql.database.azure.com:3306/gliderdatabase?useSSL=true&serverTimezone=UTC";
-        //String username = "glider"; // Replace with actual username
-       // String password = "Gpassword123"; // Replace with actual password
+    private void connectToDatabase() {
+        String url = "jdbc:mysql://gliderserver.mysql.database.azure.com:3306/gliderdatabase?useSSL=true&serverTimezone=UTC";
+        String username = "glider"; // Replace with actual username
+        String password = "Gpassword123"; // Replace with actual password
 
         try {
             connection = DriverManager.getConnection(url, username, password);
-            loginButton.setText("User is logged in.");
+            System.out.println("Database connection established successfully.");
         } catch (SQLException e) {
-            loginButton.setText("Error occurred while logging user to the system. Please try again. : " + e.getMessage());
+            System.err.println("Error connecting to database: " + e.getMessage());
+            loginStatusLabel.setText("Failed to connect to database.");
         }
     }
 
-    @FXML
-    protected void loginButtonClick() throws SQLException {
-        String usernameInput = usernameField.getText();
-        String passwordInput = passwordField.getText();
+
+    protected void loginButtonClick(ActionEvent event) throws SQLException {
+        String usernameInput = usernameField.getText().trim();
+        String passwordInput = passwordField.getText().trim();
+
+        // Validate input fields
+        if (usernameInput.isEmpty() || passwordInput.isEmpty()) {
+            loginStatusLabel.setText("Please enter both username and password.");
+            return;
+        }
+
+        // Ensure database connection is established
+        if (connection == null) {
+            loginStatusLabel.setText("Database connection not available.");
+            return;
+        }
 
         loginButton.setText(("Executing log in: " + usernameInput + passwordInput));
-        //welcomeText.setText("Welcome to JavaFX Application!");
+
+
+import javafx.animation.PauseTransition;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import javafx.util.Duration;
+
+// ...
+
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            if (resultSet.next()) {
+                loginStatusLabel.setText("Login is successful. Welcome, " + resultSet.getString("username") + " :) ");
+
+                PauseTransition pause = new PauseTransition(Duration.seconds(5));
+                pause.setOnFinished(event -> {
+                    try {
+                        FXMLLoader loader = new FXMLLoader(getClass().getResource("NextScene.fxml"));
+                        Parent nextSceneRoot = loader.load();
+                        Scene nextScene = new Scene(nextSceneRoot);
+                        Stage stage = (Stage) loginStatusLabel.getScene().getWindow();
+                        stage.setScene(nextScene);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+                pause.play();
+            } else {
+                loginStatusLabel.setText("Login is unsuccessful. Please try again.");
+            }
+        } catch (SQLException ex) {
+            loginStatusLabel.setText("Error executing login query: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         String loginQuery = "SELECT * FROM user where username = ? and password = ?";
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(loginQuery));
-            prepare
+        try (PreparedStatement preparedStatement = connection.prepareStatement(loginQuery)) {
+            preparedStatement.setString(1, usernameInput);
+            preparedStatement.setString(2, passwordInput);
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()){
+                if (resultSet.next()){
+                    loginStatusLabel.setText("Login is successful. Welcome, " + resultSet.getString("username") + " :) ");
+                } else {
+                    loginStatusLabel.setText("Login is unsuccessful. Please try again, " + resultSet.getString("username") + " :( ");
+                }
+            }
+    } catch (SQLException ex){
+            loginStatusLabel.setText("Error executing login query: " + ex.getMessage());
+            ex.printStackTrace();
 
         }
     }
